@@ -1,0 +1,1 @@
+This product includes softwares are developed by Jeremy Chow(coderplay@gmail.com) and has learnt much from the analogous project mahout of Apache Software Foundation.

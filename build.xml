@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<!-- ====================================================================== 
+     2008-3-23 10:44:04 AM                                                   
+
+     redpoll    
+     Another machine learning library using hadoop
+                   
+     Jeremy Chow(coderplay@gmail.com)                                                           
+     ====================================================================== -->
+<project name="redpoll" default="dist">
+    <description>
+            Another machine learning library using hadoop
+    </description>
+
+    <!-- ================================= 
+          target: dist              
+         ================================= -->
+    <target name="dist" depends="compile" description="--> Another machine learning library using hadoop">
+        
+    </target>
+
+    <!-- - - - - - - - - - - - - - - - - - 
+          target: compile                      
+         - - - - - - - - - - - - - - - - - -->
+    <target name="compile">
+    </target>
+
+</project>
