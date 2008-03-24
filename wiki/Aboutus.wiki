@@ -1,0 +1,5 @@
+#labels redpoll,aboutus
+About us
+
+We are two guys in school whose interests are parallel computing. Since last year, we began to pay attentions to hadoop, which exerts quite an attraction to us. And we have been looking for opportunities to work on this implementation of MapReduce for a long time and meanwhile implemented some traditional machine learning algorithms in c/java. Last year we accidentally found the article Map-Reduce for Machine Learning on Multicore by University of Stanford, which perfectly matches our interests. Later we learnt that the ASF has begun to implement a machine learning library called mahout, which is according to the thoery of that article, and planned to invite students to participate the google summer project 2008 to finish this job.
+But our english are quite poor that we may not obtain any chance, so we decided to launch this new project to let our dreams come true.
