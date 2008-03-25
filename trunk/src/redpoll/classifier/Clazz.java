@@ -15,22 +15,22 @@
  * limitations under the License.
  */
 
-package redpoll.cluster.em;
+package redpoll.classifier;
 
 /**
- * Implementation of EM (expectation maximisation) clusterer. <br/>
- * 
  * @author Jeremy Chow(coderplay@gmail.com)
+ * 
  */
-public class EMDriver {
-	
-	/**
-	 * main entry point for testing EM algorithm.
-	 * 
-	 * @param args
-	 */
-	public static void main(String[] args) {
+public class Clazz {
 		
+	/* classIndex index of class attribute. (default: last = -1) */
+	private int classId = -1;
+	
+	public Clazz(int classId) {
+		this.classId = classId;
 	}
+	
+	public Clazz(String classIdString) {
 
+	}
 }
