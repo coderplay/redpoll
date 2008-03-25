@@ -15,44 +15,50 @@
  * limitations under the License.
  */
 
-package redpoll.cluster.em;
+package redpoll.classifier.naivebayes;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparable;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
+import redpoll.classifier.Clazz;
+
 /**
  * @author Jeremy Chow(coderplay@gmail.com)
  * 
  */
-public class EMMapper extends MapReduceBase implements
+public class NaiveBayesMapper extends MapReduceBase implements
 		Mapper<WritableComparable, Text, Text, Text> {
 
-	/** Constant for normal distribution. */
-	private static double m_normConst = Math.log(Math.sqrt(2 * Math.PI));
+	private List<Clazz> classes;
 
-	public void map(WritableComparable arg0, Text arg1,
-			OutputCollector<Text, Text> arg2, Reporter arg3) throws IOException {
-
+	public void map(WritableComparable key, Text values,
+			OutputCollector<Text, Text> out, Reporter reporter)
+			throws IOException {
+		// TODO: deal with lines of literal datas, and collect them into
+		// specific classes corresponding their values.
+		
+		// out.collect(classes.get(), values);
 	}
 
-	/**
-	 * Density function of normal distribution.
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @param x input value
-	 * @param mean mean of distribution
-	 * @param stdDev standard deviation of distribution
-	 * @return the density
+	 * @see org.apache.hadoop.mapred.MapReduceBase#configure(org.apache.hadoop.mapred.JobConf)
 	 */
-	private double logNormalDensity(double x, double mean, double stdDev) {
-		double diff = x - mean;
-		return -(diff * diff / (2 * stdDev * stdDev)) - m_normConst
-				- Math.log(stdDev);
+	@Override
+	public void configure(JobConf job) {
+		super.configure(job);
+
+		classes = new ArrayList<Clazz>();
 	}
 
 }

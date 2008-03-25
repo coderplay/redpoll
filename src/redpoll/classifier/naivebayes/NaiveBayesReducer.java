@@ -15,22 +15,14 @@
  * limitations under the License.
  */
 
-package redpoll.cluster.em;
+package redpoll.classifier.naivebayes;
+
+import org.apache.hadoop.mapred.MapReduceBase;
 
 /**
- * Implementation of EM (expectation maximisation) clusterer. <br/>
- * 
  * @author Jeremy Chow(coderplay@gmail.com)
+ *
  */
-public class EMDriver {
-	
-	/**
-	 * main entry point for testing EM algorithm.
-	 * 
-	 * @param args
-	 */
-	public static void main(String[] args) {
-		
-	}
+public class NaiveBayesReducer extends MapReduceBase {
 
 }
