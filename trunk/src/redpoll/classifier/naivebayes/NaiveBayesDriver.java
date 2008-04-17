@@ -19,9 +19,12 @@ package redpoll.classifier.naivebayes;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
+
+import redpoll.core.Attribute;
 
 /**
  * Class for a Naive Bayes classifier. <br/>
@@ -35,15 +38,17 @@ public class NaiveBayesDriver {
 	 * main entry point
 	 * 
 	 * @param args should contain the following arguments: <p>
-	 * args[0] the directory pathname for input data <br/>
-	 * args[1] the directory pathname for output data <br/>
-	 * args[2] classIndex index of class attribute (default: last). <br/>
+	 * 		args[0] the directory pathname for input data <br/> 
+	 * 		args[1] the directory pathname for output data <br/> 
+	 *		args[2] the directory pathname for attributes informations of the input data.<br/>
+	 * 		args[3] classIndex index of class attribute (default: last). <br/>
 	 */
 	public static void main(String[] args) {
 		String input = args[0];
 		String output = args[1];
-		String classIndex = args[2];
-		runJob(input, output, classIndex);
+		String atrributesIn = args[2];
+		String classIndex = args[3];
+		runJob(input, output, atrributesIn, classIndex);
 	}
 
 	/**
@@ -51,9 +56,11 @@ public class NaiveBayesDriver {
 	 * 
 	 * @param input the directory pathname for input data
 	 * @param output the directory pathname for output statistical data
+	 * @param attributesIn the directory pathname for attributes informations of the input data
 	 * @param classIndex index of class attribute (default: last).
 	 */
-	public static void runJob(String input, String output, String classIndex) {
+	public static void runJob(String input, String output, String attributesIn,
+			String classIndex) {
 		try {
 			JobConf conf = new JobConf(NaiveBayesDriver.class);
 			Path outPath = new Path(output);
@@ -62,10 +69,10 @@ public class NaiveBayesDriver {
 				fs.delete(outPath);
 			}
 			fs.mkdirs(outPath);
-			
+
 			// run a naive bayes classifier
 			System.out.println("Running naive bayes classfier");
-			runClassifier(input, output + "/classes", classIndex);
+			runClassifier(input, output + "/part-00000", attributesIn, classIndex);
 
 		} catch (Exception e) {
 			throw new RuntimeException(e);
@@ -77,21 +84,28 @@ public class NaiveBayesDriver {
 	 * 
 	 * @param input the directory pathname for input data
 	 * @param output the directory pathname for output statistical data
+	 * @param attributesIn the directory pathname for attributes informations of the input data
 	 * @param classIndex index of class attribute (default: last).
 	 */
 	public static void runClassifier(String input, String output,
-			String classIndex) {
+			String attributesIn, String classIndex) {
 		JobClient client = new JobClient();
 		JobConf conf = new JobConf(NaiveBayesDriver.class);
 
+		conf.setJobName("naivebayes");
 		conf.setOutputKeyClass(Text.class);
-		conf.setOutputValueClass(Text.class);
+		conf.setOutputValueClass(LongWritable.class);
 
 		conf.setInputPath(new Path(input));
 		Path outPath = new Path(output);
 		conf.setOutputPath(outPath);
 
 		conf.setMapperClass(NaiveBayesMapper.class);
+		conf.setCombinerClass(NaiveBayesReducer.class);
+		conf.setReducerClass(NaiveBayesReducer.class);
+		
+		conf.set(Attribute.ATTRIBUTE_PATH_KEY, attributesIn);
+		conf.set(NaiveBayes.CLASS_INDEX_KEY, classIndex);
 
 		client.setConf(conf);
 		try {
