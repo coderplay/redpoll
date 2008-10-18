@@ -7,22 +7,62 @@
                    
      Jeremy Chow(coderplay@gmail.com)                                                           
      ====================================================================== -->
-<project name="redpoll" default="dist">
-    <description>
+<project name="redpoll" default="jar" basedir=".">
+	<description>
             Another machine learning library using hadoop
     </description>
 
-    <!-- ================================= 
-          target: dist              
-         ================================= -->
-    <target name="dist" depends="compile" description="--> Another machine learning library using hadoop">
-        
-    </target>
+	<property name="name" value="redpoll" />
+	<property name="version" value="0.00.1" />
+	<property name="final.name" value="${name}-${version}" />
 
-    <!-- - - - - - - - - - - - - - - - - - 
+	<property name="lib" value="lib" />
+	<property name="src" value="src" />
+	<property name="dist" value="dist" />
+	<property name="dest" value="build" />
+
+	<!-- The compilation classpath -->
+	<path id="classpath">
+		<fileset dir="${lib}">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+
+
+	<!-- ================================= 
+          target: jar              
+         ================================= -->
+	<target name="jar" depends=" compile" description="make redpoll jar">
+		<mkdir dir="${dist}" />
+		<jar jarfile="${dist}/${final.name}.jar" basedir="${dest}">
+			<manifest>
+				<section name="redpoll">
+					<attribute name="Implementation-Title" value="Redpoll" />
+					<attribute name="Implementation-Version" value="${version}" />
+					<attribute name="Implementation-Vendor" value="Jeremy Chow(coderplay@gmail.com)" />
+				</section>
+			</manifest>
+		</jar>
+	</target>
+
+	
+	<!-- - - - - - - - - - - - - - - - - - 
           target: compile                      
          - - - - - - - - - - - - - - - - - -->
-    <target name="compile">
-    </target>
+	<target name="compile" depends="clean">
+		<mkdir dir="${dest}" />
+		<javac srcdir="${src}" destdir="${dest}">
+			<classpath refid="classpath" />
+		</javac>
+	</target>
+
+	<!-- - - - - - - - - - - - - - - - - - 
+          target: clean                      
+         - - - - - - - - - - - - - - - - - -->
+	<target name="clean">
+		<delete dir="${dest}" />
+		<delete dir="${dist}" />
+	</target>
+	
 
 </project>
