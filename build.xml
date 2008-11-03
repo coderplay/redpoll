@@ -51,7 +51,7 @@
          - - - - - - - - - - - - - - - - - -->
 	<target name="compile" depends="clean">
 		<mkdir dir="${dest}" />
-		<javac srcdir="${src}" destdir="${dest}">
+		<javac srcdir="${src}" destdir="${dest}" encoding="utf-8" debug="true">
 			<classpath refid="classpath" />
 		</javac>
 	</target>
@@ -63,6 +63,4 @@
 		<delete dir="${dest}" />
 		<delete dir="${dist}" />
 	</target>
-	
-
 </project>
