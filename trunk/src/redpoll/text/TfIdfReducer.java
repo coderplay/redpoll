@@ -19,55 +19,48 @@
 package redpoll.text;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Iterator;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.io.ArrayWritable;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.lucene.util.OpenBitSet;
+import org.apache.mahout.matrix.SparseVector;
 
 /**
- * Collects a words list buffer and caculates the df for terms.
+ * Reducer to create vsm of documents.
  * @author Jeremy Chow(coderplay@gmail.com)
  */
-public class TermReducer extends MapReduceBase implements Reducer<Text, TermWritable, Text, TermWritable> {
+public class TfIdfReducer extends MapReduceBase implements Reducer<LongWritable, TfIdfWritable, LongWritable, TfIdfWritable>{
   
-  private static final Log log = LogFactory.getLog(TermReducer.class.getName());
+  private int totalTerms;
   
-  private int dfLimit;
-  public void reduce(Text key, Iterator<TermWritable> values,
-      OutputCollector<Text, TermWritable> output, Reporter reporter)
+  public void reduce(LongWritable key, Iterator<TfIdfWritable> values,
+      OutputCollector<LongWritable, TfIdfWritable> output, Reporter reporter)
       throws IOException {
-    
-    ArrayList<TfWritable> tfs = new ArrayList<TfWritable>();
+    SparseVector tfIdfVector = new SparseVector(totalTerms);
+    OpenBitSet bits = new OpenBitSet(totalTerms);
     
     while (values.hasNext()) {
-      TfWritable value = (TfWritable) values.next().get();
-      tfs.add((TfWritable)value);  
+      ElementWritable value = (ElementWritable) values.next().get();
+      int index = value.index(); double tfIdf = value.get();
+      tfIdfVector.setQuick(index, tfIdf);
+      if(tfIdf > 0)
+        bits.fastSet(index);
     }
     
-    int df = tfs.size();
-    TfWritable writables[] = new TfWritable[df];
-    ArrayWritable aw = new TfArrayWritable(tfs.toArray(writables));
-    
-    if(df > dfLimit) {
-      // if not stands for documents' total number, then ouput term's tf vector
-      if(!key.toString().equals("redpoll.docs.num"))
-        output.collect(key, new TermWritable(aw)); // wrap again
-      output.collect(key, new TermWritable(new IntWritable(df)));
-    }
+    // tf-idf style vector
+    output.collect(key, new TfIdfWritable(tfIdfVector));
+    // bitset style
+    output.collect(key, new TfIdfWritable(new OpenBitSetWritable(bits)));
   }
   
   @Override
   public void configure(JobConf job) {
-    dfLimit = job.getInt("redpoll.text.df.limit", 3);
+    totalTerms = job.getInt("redpoll.text.terms.num", 1024);
   }
 
 }
