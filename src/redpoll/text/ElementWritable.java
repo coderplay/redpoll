@@ -1,4 +1,4 @@
-/** 
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,43 +18,59 @@
 
 package redpoll.text;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+import org.apache.hadoop.io.Writable;
+import org.apache.mahout.matrix.Vector;
+
 /**
- * Document which will be stored or mined.
+ * Vector Element. 
  * @author Jeremy Chow(coderplay@gmail.com)
  */
-public class SimpleDocument implements Document{
-    
-  private String documentId;
-  private String path;
-  private String title;
-  private String content;
-  
-  public SimpleDocument(String id, String path, String title, String content) {
-    this.documentId = id;
-    this.path = path;
-    this.title = title;
-  }
- 
-  /**
-   * path or url.
-   */
-  public String getPath() {
-    return path;
+public class ElementWritable implements Vector.Element, Writable{
+
+  private int index;
+  private double value;
+
+  public ElementWritable() {
   }
   
-  public String getTitle() {
-    return title;
+  public ElementWritable(int index) {
+   this.index = index;
   }
   
-  public String getContent() {
-    return content;
+  public ElementWritable(int index,  double value) {
+    this.index = index;
+    this.value = value;
   }
-  
-  public String getDocumentId() {
-    return documentId;
+
+  public void readFields(DataInput in) throws IOException {
+    index = in.readInt();
+    value = in.readDouble();
+  }
+
+  public void write(DataOutput out) throws IOException {
+    out.writeInt(index);
+    out.writeDouble(value);
   }
   
   public String toString() {
-    return documentId + " " + path + " " + title + " " + content; 
+    return index + ":" + value;
   }
+
+  public double get() {
+    return value;
+  }
+
+  public int index() {
+    return index;
+  }
+
+  public void set(double value) {
+    this.value = value;
+  }
+  
+
 }

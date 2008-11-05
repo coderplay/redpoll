@@ -18,43 +18,38 @@
 
 package redpoll.text;
 
+import org.apache.hadoop.io.GenericWritable;
+import org.apache.hadoop.io.Writable;
+
 /**
- * Document which will be stored or mined.
+ * Generic Writable class for vector space model.
  * @author Jeremy Chow(coderplay@gmail.com)
  */
-public class SimpleDocument implements Document{
-    
-  private String documentId;
-  private String path;
-  private String title;
-  private String content;
+public class TfIdfWritable extends GenericWritable {
+  private static Class<? extends Writable>[] CLASSES = null;
   
-  public SimpleDocument(String id, String path, String title, String content) {
-    this.documentId = id;
-    this.path = path;
-    this.title = title;
+  static {
+    CLASSES = (Class<? extends Writable>[]) new Class[] {
+        redpoll.text.OpenBitSetWritable.class,
+        redpoll.text.ElementWritable.class,
+        org.apache.mahout.matrix.SparseVector.class,
+        };
   }
- 
-  /**
-   * path or url.
+
+  public TfIdfWritable() {
+  }
+
+  public TfIdfWritable(Writable instance) {
+    set(instance);
+  }
+
+
+  /* (non-Javadoc)
+   * @see org.apache.hadoop.io.GenericWritable#getTypes()
    */
-  public String getPath() {
-    return path;
+  @Override
+  protected Class<? extends Writable>[] getTypes() {
+    return CLASSES;
   }
-  
-  public String getTitle() {
-    return title;
-  }
-  
-  public String getContent() {
-    return content;
-  }
-  
-  public String getDocumentId() {
-    return documentId;
-  }
-  
-  public String toString() {
-    return documentId + " " + path + " " + title + " " + content; 
-  }
+
 }

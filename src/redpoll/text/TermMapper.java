@@ -1,4 +1,5 @@
-/* Licensed to the Apache Software Foundation (ASF) under one
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -38,10 +39,10 @@ import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 
 /**
- * A class provides for doing words segmenation and counting term DFs.<p>
+ * A class provides for doing words segmenation and counting term TFs and DFs.<p>
  * in: key is document id, value is a document instance. <br>
  * output:
- * <li>key is documentId, value is a string after segmentation. </li>
+ * <li>key is term, value is frequency of this term. </li>
  * <li>key is term, value is one weight of term document frequency.</li>
  * @author Jeremy Chow(coderplay@gmail.com)
  */
@@ -56,8 +57,6 @@ public class TermMapper extends MapReduceBase implements
   private Integer titleWeight = new Integer(2);
   /* frequency weight for document content */
   private Integer contentWeight = new Integer(1);
-
-  private IntWritable one = new IntWritable(1);
  
   public void map(LongWritable key, Document value,
       OutputCollector<Text, TermWritable> output, Reporter reporter)
@@ -74,6 +73,10 @@ public class TermMapper extends MapReduceBase implements
       // <term, <documentId,tf>>
       output.collect(term, new TermWritable(tf)); // wrap then collect
     }
+    
+    // for counting total documents number
+    TfWritable blank = new TfWritable();
+    output.collect(new Text("redpoll.docs.num"), new TermWritable(blank));
   }
     
   private void collectWords(String text, Map<String, Integer> words,
