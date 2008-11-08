@@ -1,4 +1,5 @@
-/* Licensed to the Apache Software Foundation (ASF) under one
+/** 
+ * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -66,7 +67,7 @@ public class SogouCorpusReader {
 
   private STATUS currentSatus;
   private NODE currentNode;
-
+  
   public SogouCorpusReader(InputStream in) throws IOException {
     this(in, DEFAULT_BUFFER_SIZE);
   }
@@ -214,6 +215,8 @@ public class SogouCorpusReader {
     } catch (EOFException eofe) {
       return -1;
     }
+    // take current document position as its ID
+    doc.setId(String.valueOf(currentDocPosn));
     return currentDocPosn;
   }
   
@@ -278,7 +281,7 @@ public class SogouCorpusReader {
     if (currentNode == NODE.URL) {
       doc.setPathBytes(text);
     } else if (currentNode == NODE.DOC_NO) {
-      doc.setIdBytes(text);
+      //doc.setIdBytes(text);
     } else if (currentNode == NODE.TITLE) {
       doc.setTitleBytes(text);
     } else if (currentNode == NODE.CONTENT) {
@@ -309,7 +312,7 @@ public class SogouCorpusReader {
     int counter = 0; long pos = 0;
     long start = System.currentTimeMillis();
     while ((pos = reader.nextDoc(doc)) >= 0 ) {
-      System.out.println("docId:" + pos + "\tpos:" + reader.getPosition());
+      System.out.println("docId:" + pos + "\tpos:" + doc.getContent());
     }
 //    System.out.println(System.currentTimeMillis() - start );
 //    System.out.println(counter);

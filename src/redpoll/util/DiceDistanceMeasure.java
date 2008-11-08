@@ -1,4 +1,4 @@
-/** 
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,41 +16,31 @@
  * limitations under the License.
  */
 
-package redpoll.text;
+package redpoll.util;
 
-import org.apache.hadoop.io.GenericWritable;
-import org.apache.hadoop.io.Writable;
-
+import redpoll.core.Vector;
 
 /**
- * Generic Writable class for vector space model.
+ * http://en.wikipedia.org/wiki/Dice_coefficient
  * @author Jeremy Chow(coderplay@gmail.com)
  */
-public class TfIdfWritable extends GenericWritable {
-  private static Class<? extends Writable>[] CLASSES = null;
-  
-  static {
-    CLASSES = (Class<? extends Writable>[]) new Class[] {
-        redpoll.text.OpenBitSetWritable.class,
-        redpoll.text.ElementWritable.class,
-        redpoll.core.WritableSparseVector.class,
-        };
-  }
+public class DiceDistanceMeasure implements DistanceMeasure {
 
-  public TfIdfWritable() {
-  }
-
-  public TfIdfWritable(Writable instance) {
-    set(instance);
-  }
-
-
-  /* (non-Javadoc)
-   * @see org.apache.hadoop.io.GenericWritable#getTypes()
+  /**
+   * Calculates the distance between two vectors following formula below: <p>
+   * 1 - 2|x∩y| / (|x| + |y|)
+   * @return 0 for perfect match, > 0 for greater distance
    */
-  @Override
-  protected Class<? extends Writable>[] getTypes() {
-    return CLASSES;
+  public double distance(Vector lhs, Vector rhs) {
+    int sumSize = lhs.size() + rhs.size();
+    if(sumSize <= 0) return 1.0;
+    int intersection = 0;
+    for (Vector.Element feature : lhs) {
+      if(rhs.get(feature.getIndex()) > 0) {
+        intersection ++;
+      }
+    }
+    return 1.0 - (2.0 * (double)intersection) / ((double)sumSize);
   }
-
+  
 }

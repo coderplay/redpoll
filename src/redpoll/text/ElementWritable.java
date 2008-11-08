@@ -23,7 +23,8 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.hadoop.io.Writable;
-import org.apache.mahout.matrix.Vector;
+
+import redpoll.core.Vector;
 
 /**
  * Vector Element. 
@@ -60,15 +61,15 @@ public class ElementWritable implements Vector.Element, Writable{
     return index + ":" + value;
   }
 
-  public double get() {
+  public double getValue() {
     return value;
   }
 
-  public int index() {
+  public int getIndex() {
     return index;
   }
 
-  public void set(double value) {
+  public void setValue(double value) {
     this.value = value;
   }
   

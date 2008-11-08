@@ -25,7 +25,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DefaultStringifier;
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.FileInputFormat;
@@ -60,7 +59,7 @@ public class TfIdfDriver {
     conf.setMapperClass(TfIdfMapper.class);
     conf.setReducerClass(TfIdfReducer.class);
     //conf.setNumMapTasks(10);
-    conf.setOutputKeyClass(LongWritable.class);
+    conf.setOutputKeyClass(Text.class);
     conf.setOutputValueClass(TfIdfWritable.class);
     conf.setInputFormat(SequenceFileInputFormat.class);
     conf.setOutputFormat(TfIdfOutputFormat.class);
@@ -82,7 +81,6 @@ public class TfIdfDriver {
         termMap.put(key.toString(), index);
         index++;
       } else {
-        System.out.println(":::::::::::::::::::::::::redpoll.text.terms.num:\t" + value.get());
         conf.setInt("redpoll.docs.num", value.get());
       }
     }

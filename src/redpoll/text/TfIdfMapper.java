@@ -24,7 +24,6 @@ import java.util.HashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.DefaultStringifier;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapred.JobConf;
@@ -39,7 +38,7 @@ import org.apache.hadoop.util.GenericsUtil;
  * @author Jeremy Chow(coderplay@gmail.com)
  */
 public class TfIdfMapper extends MapReduceBase implements
-  Mapper<Text, TfArrayWritable, LongWritable, TfIdfWritable> {
+  Mapper<Text, TfArrayWritable, Text, TfIdfWritable> {
   private static final Log log = LogFactory.getLog(TfIdfMapper.class
       .getName());
   
@@ -47,7 +46,7 @@ public class TfIdfMapper extends MapReduceBase implements
   private int toalDocNum;
   
   public void map(Text key, TfArrayWritable value,
-      OutputCollector<LongWritable, TfIdfWritable> output, Reporter reporter)
+      OutputCollector<Text, TfIdfWritable> output, Reporter reporter)
       throws IOException {
     Writable[] tfs = value.get();
     double df = (double) tfs.length;            // document frequcy
@@ -58,7 +57,8 @@ public class TfIdfMapper extends MapReduceBase implements
       double tf = 1.0 + Math.log(1.0 + Math.log((double) tfWritable.getTf()));
       double idf = Math.log((1 + toalDocNum) / df);
       double tfIdf = tf * idf;
-      output.collect(new LongWritable(tfWritable.getDocumentId()),
+
+      output.collect(new Text(tfWritable.getDocumentId()),
           new TfIdfWritable(new ElementWritable(index.intValue(), tfIdf)));
     }
   }

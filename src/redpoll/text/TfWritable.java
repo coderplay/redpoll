@@ -23,7 +23,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.WritableUtils;
 
@@ -33,38 +33,38 @@ import org.apache.hadoop.io.WritableUtils;
  */
 public class TfWritable implements Writable {
 
-  private LongWritable documentId;
+  private Text documentId;
   private IntWritable tf;
 
   public TfWritable() {
-    documentId = new LongWritable();
+    documentId = new Text();
     tf = new IntWritable();
   }
   
-  public TfWritable(long documentId, int tf) {
+  public TfWritable(String documentId, int tf) {
     set(documentId, tf);
   }
   
-  public TfWritable(LongWritable documentId,  IntWritable tf) {
+  public TfWritable(Text documentId,  IntWritable tf) {
     set(documentId, tf);
   }
   
-  public void set(long documentId,  int tf) {
-    set(new LongWritable(documentId), new IntWritable(tf));
+  public void set(String documentId,  int tf) {
+    set(new Text(documentId), new IntWritable(tf));
   }
   
-  public void set(LongWritable documentId,  IntWritable tf) {
+  public void set(Text documentId,  IntWritable tf) {
     this.documentId = documentId;
     this.tf = tf;
   }
 
   public void readFields(DataInput in) throws IOException {
-    documentId.set(in.readLong());
+    documentId.readFields(in);
     tf.set(WritableUtils.readVInt(in));
   }
 
   public void write(DataOutput out) throws IOException {
-    out.writeLong(documentId.get());
+    documentId.write(out);
     WritableUtils.writeVInt(out, tf.get());
   }
   
@@ -72,8 +72,8 @@ public class TfWritable implements Writable {
     return documentId + ":" + tf;
   }
 
-  public long getDocumentId() {
-    return documentId.get();
+  public String getDocumentId() {
+    return documentId.toString();
   }
 
   public int getTf() {

@@ -68,7 +68,8 @@ public class TermMapper extends MapReduceBase implements
     for(Map.Entry<String, Integer> entry: wordMap.entrySet()) {
       Text term = new Text(entry.getKey());
       IntWritable freq = new IntWritable(entry.getValue());
-      TfWritable tf = new TfWritable(key, freq);
+      Text documentId = new Text(value.getDocumentId());
+      TfWritable tf = new TfWritable(documentId, freq);
       
       // <term, <documentId,tf>>
       output.collect(term, new TermWritable(tf)); // wrap then collect
