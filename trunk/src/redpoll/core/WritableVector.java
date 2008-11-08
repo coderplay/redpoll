@@ -1,4 +1,4 @@
-/** 
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,41 +16,14 @@
  * limitations under the License.
  */
 
-package redpoll.text;
+package redpoll.core;
 
-import org.apache.hadoop.io.GenericWritable;
 import org.apache.hadoop.io.Writable;
 
-
 /**
- * Generic Writable class for vector space model.
+ * Base class for those vector class with {@link Writable} features.
  * @author Jeremy Chow(coderplay@gmail.com)
  */
-public class TfIdfWritable extends GenericWritable {
-  private static Class<? extends Writable>[] CLASSES = null;
-  
-  static {
-    CLASSES = (Class<? extends Writable>[]) new Class[] {
-        redpoll.text.OpenBitSetWritable.class,
-        redpoll.text.ElementWritable.class,
-        redpoll.core.WritableSparseVector.class,
-        };
-  }
-
-  public TfIdfWritable() {
-  }
-
-  public TfIdfWritable(Writable instance) {
-    set(instance);
-  }
-
-
-  /* (non-Javadoc)
-   * @see org.apache.hadoop.io.GenericWritable#getTypes()
-   */
-  @Override
-  protected Class<? extends Writable>[] getTypes() {
-    return CLASSES;
-  }
+public interface WritableVector extends Vector, Writable {
 
 }

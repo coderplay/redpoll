@@ -22,8 +22,8 @@ import java.io.IOException;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.SequenceFile.CompressionType;
 import org.apache.hadoop.io.compress.CompressionCodec;
@@ -34,24 +34,24 @@ import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.util.Progressable;
 import org.apache.hadoop.util.ReflectionUtils;
-import org.apache.mahout.matrix.SparseVector;
+
+import redpoll.core.WritableSparseVector;
 
 /**
  * This class allows writing the output data to different output files in
  * sequence file output format.
  * @author Jeremy Chow(coderplay@gmail.com)
  */
-public class TfIdfOutputFormat extends FileOutputFormat<LongWritable, TfIdfWritable> {
+public class TfIdfOutputFormat extends FileOutputFormat<Text, TfIdfWritable> {
   
   protected static class TfIdfWriter implements
-      RecordWriter<LongWritable, TfIdfWritable> {
+      RecordWriter<Text, TfIdfWritable> {
     
     private final String myName;
     private final JobConf myJob;
     private final Progressable myProgress;
     
-    private RecordWriter<LongWritable, OpenBitSetWritable> bitsWriter;
-    private RecordWriter<LongWritable, SparseVector> tfIdfWriter;
+    private RecordWriter<Text, WritableSparseVector> tfIdfWriter;
         
     public TfIdfWriter(JobConf job, String name, Progressable progress)
         throws IOException {
@@ -61,34 +61,22 @@ public class TfIdfOutputFormat extends FileOutputFormat<LongWritable, TfIdfWrita
     }
 
     public void close(Reporter reporter) throws IOException {
-      bitsWriter.close(reporter);
       tfIdfWriter.close(reporter);
     }
 
-    public void write(LongWritable key, TfIdfWritable value)
+    public void write(Text key, TfIdfWritable value)
         throws IOException {
       Writable val = value.get();
-      boolean isBits = (val instanceof OpenBitSetWritable);
-      String path = isBits ? "bits/" + myName : "tf-idf/" + myName;
       // get the file name based on the input file name
-      String finalPath = getInputFileBasedOutputFileName(myJob, path);
-
-      if(isBits) {
-        if(bitsWriter == null) {
-          bitsWriter = getBitsTfRecordWriter(myJob, finalPath, myProgress);
-        }
-        bitsWriter.write(key, (OpenBitSetWritable) val);
-      }
-      else {
+      String finalPath = getInputFileBasedOutputFileName(myJob, myName);
         if(tfIdfWriter == null) {
           tfIdfWriter = getTfIdfRecordWriter(myJob, finalPath, myProgress);
         }
-        tfIdfWriter.write(key, (SparseVector) val);
-      }
+        tfIdfWriter.write(key, (WritableSparseVector) val);
     }
   }
-  
-  protected static RecordWriter<LongWritable, OpenBitSetWritable> getBitsTfRecordWriter(
+   
+  protected static RecordWriter<Text, WritableSparseVector> getTfIdfRecordWriter(
       JobConf job, String name, Progressable progress) throws IOException {
     Path file = FileOutputFormat.getTaskOutputPath(job, name);
     FileSystem fs = file.getFileSystem(job);
@@ -105,40 +93,10 @@ public class TfIdfOutputFormat extends FileOutputFormat<LongWritable, TfIdfWrita
     }
 
     final SequenceFile.Writer out = SequenceFile.createWriter(fs, job, file,
-        LongWritable.class, OpenBitSetWritable.class, compressionType, codec, progress);
+        Text.class, WritableSparseVector.class, compressionType, codec, progress);
 
-    return new RecordWriter<LongWritable, OpenBitSetWritable>() {
-      public void write(LongWritable key, OpenBitSetWritable value) throws IOException {
-        out.append(key, value);
-      }
-
-      public void close(Reporter reporter) throws IOException {
-        out.close();
-      }
-    };
-  }
- 
-  protected static RecordWriter<LongWritable, SparseVector> getTfIdfRecordWriter(
-      JobConf job, String name, Progressable progress) throws IOException {
-    Path file = FileOutputFormat.getTaskOutputPath(job, name);
-    FileSystem fs = file.getFileSystem(job);
-
-    CompressionCodec codec = null;
-    CompressionType compressionType = CompressionType.NONE;
-    if (getCompressOutput(job)) {
-      // find the kind of compression to do
-      compressionType = getOutputCompressionType(job);
-      // find the right codec
-      Class<? extends CompressionCodec> codecClass = getOutputCompressorClass(
-          job, DefaultCodec.class);
-      codec = ReflectionUtils.newInstance(codecClass, job);
-    }
-
-    final SequenceFile.Writer out = SequenceFile.createWriter(fs, job, file,
-        LongWritable.class, SparseVector.class, compressionType, codec, progress);
-
-    return new RecordWriter<LongWritable, SparseVector>() {
-      public void write(LongWritable key, SparseVector value) throws IOException {
+    return new RecordWriter<Text, WritableSparseVector>() {
+      public void write(Text key, WritableSparseVector value) throws IOException {
         out.append(key, value);
       }
 
@@ -200,7 +158,7 @@ public class TfIdfOutputFormat extends FileOutputFormat<LongWritable, TfIdfWrita
   }
   
   @Override
-  public RecordWriter<LongWritable, TfIdfWritable> getRecordWriter(FileSystem fs,
+  public RecordWriter<Text, TfIdfWritable> getRecordWriter(FileSystem fs,
       JobConf job, String name, Progressable progress) throws IOException {
     return new TfIdfWriter(job, name, progress);
   }

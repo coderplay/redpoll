@@ -23,9 +23,10 @@ import java.io.IOException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.SequenceFile;
-import org.apache.mahout.matrix.SparseVector;
+import org.apache.hadoop.io.Text;
+
+import redpoll.core.WritableSparseVector;
 
 /**
  * Vector space model result viewer, usage:
@@ -39,13 +40,13 @@ public class TfIdfResultViewer {
   
   public static void main(String[] args) throws IOException {
     FileSystem fs = FileSystem.get(conf);
-    Path path = new Path(args[0] + "/tf-idf/part-00000");
+    Path path = new Path(args[0] + "/part-00000");
     SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, conf);
-    LongWritable key = new LongWritable();
-    SparseVector value = new SparseVector();
+    Text key = new Text();
+    WritableSparseVector value = new WritableSparseVector();
     int counter = 0;
     while ((reader.next(key, value))) {
-      System.out.println(key.get() + value.asFormatString());
+      System.out.println(key.toString() + value.asFormatString());
       counter ++;
     }
     System.out.println("result count:\t" + counter);

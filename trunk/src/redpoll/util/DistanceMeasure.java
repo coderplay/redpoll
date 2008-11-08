@@ -1,4 +1,4 @@
-/** 
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,41 +16,25 @@
  * limitations under the License.
  */
 
-package redpoll.text;
+package redpoll.util;
 
-import org.apache.hadoop.io.GenericWritable;
-import org.apache.hadoop.io.Writable;
-
+import redpoll.core.CardinalityException;
+import redpoll.core.Vector;
 
 /**
- * Generic Writable class for vector space model.
- * @author Jeremy Chow(coderplay@gmail.com)
+ * This interface is used for objects which can determine a distance metric
+ * between two points
  */
-public class TfIdfWritable extends GenericWritable {
-  private static Class<? extends Writable>[] CLASSES = null;
-  
-  static {
-    CLASSES = (Class<? extends Writable>[]) new Class[] {
-        redpoll.text.OpenBitSetWritable.class,
-        redpoll.text.ElementWritable.class,
-        redpoll.core.WritableSparseVector.class,
-        };
-  }
+public interface DistanceMeasure{
 
-  public TfIdfWritable() {
-  }
-
-  public TfIdfWritable(Writable instance) {
-    set(instance);
-  }
-
-
-  /* (non-Javadoc)
-   * @see org.apache.hadoop.io.GenericWritable#getTypes()
+  /**
+   * Returns the distance metric applied to the arguments
+   * 
+   * @param v1 a Vector defining a multidimensional point in some feature space
+   * @param v2 a Vector defining a multidimensional point in some feature space
+   * @return a scalar doubles of the distance
+   * @throws CardinalityException
    */
-  @Override
-  protected Class<? extends Writable>[] getTypes() {
-    return CLASSES;
-  }
+  public double distance(Vector v1, Vector v2) throws CardinalityException;
 
 }

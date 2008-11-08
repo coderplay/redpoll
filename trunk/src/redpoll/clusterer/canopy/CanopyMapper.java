@@ -1,4 +1,4 @@
-/** 
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,44 +16,42 @@
  * limitations under the License.
  */
 
-package redpoll.text;
+package redpoll.clusterer.canopy;
 
 import java.io.IOException;
-import java.util.Iterator;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
+import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
 import redpoll.core.WritableSparseVector;
+import redpoll.core.WritableVector;
 
 /**
- * Reducer to create vsm of documents.
  * @author Jeremy Chow(coderplay@gmail.com)
  */
-public class TfIdfReducer extends MapReduceBase implements Reducer<Text, TfIdfWritable, Text, TfIdfWritable>{
+public class CanopyMapper extends MapReduceBase implements Mapper<Text, WritableVector, Text, WritableVector> {
   
-  private int totalTerms;
+  private static final Log log = LogFactory.getLog(CanopyMapper.class.getName());
   
-  public void reduce(Text key, Iterator<TfIdfWritable> values,
-      OutputCollector<Text, TfIdfWritable> output, Reporter reporter)
-      throws IOException {
-    WritableSparseVector tfIdfVector = new WritableSparseVector(totalTerms);    
-    while (values.hasNext()) {
-      ElementWritable value = (ElementWritable) values.next().get();
-      tfIdfVector.setQuick(value.getIndex(), value.getValue());
-    }
-    
-    // tf-idf style vector
-    output.collect(key, new TfIdfWritable(tfIdfVector));
+  private final List<Canopy> canopies = new ArrayList<Canopy>();
+  
+  public void map(Text key, WritableVector value,
+      OutputCollector<Text, WritableVector> output, Reporter reporter) throws IOException {
+    WritableVector point = (WritableSparseVector) value.copy();
+    Canopy.emitPointToNewCanopies(point, canopies, output);
   }
   
   @Override
   public void configure(JobConf job) {
-    totalTerms = job.getInt("redpoll.text.terms.num", 1024);
+    Canopy.configure(job);
   }
 
 }
