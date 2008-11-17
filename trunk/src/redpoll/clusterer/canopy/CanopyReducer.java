@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.MapReduceBase;
@@ -29,21 +31,22 @@ import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
 
+import redpoll.core.LabeledWritableVector;
 import redpoll.core.WritableVector;
 
 public class CanopyReducer extends MapReduceBase implements
         Reducer<Text, WritableVector, Text, WritableVector> {
 
+  private static final Log log = LogFactory.getLog(CanopyReducer.class.getName());
+  
   private final List<Canopy> canopies = new ArrayList<Canopy>();
 
   public void reduce(Text key, Iterator<WritableVector> values,
                      OutputCollector<Text, WritableVector> output, Reporter reporter) throws IOException {
     while (values.hasNext()) {
-      WritableVector point = values.next();
-      Canopy.addPointToCanopies(point, canopies);
+      LabeledWritableVector point = (LabeledWritableVector) values.next();
+      Canopy.emitPointToNewCanopies(point, canopies, output);
     }
-    for (Canopy canopy : canopies)
-      output.collect(new Text(canopy.getIdentifier()), canopy.computeCentroid());
   }
 
   @Override

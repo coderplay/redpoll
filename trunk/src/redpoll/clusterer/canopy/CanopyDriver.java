@@ -28,10 +28,9 @@ import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
-import org.apache.hadoop.mapred.TextOutputFormat;
-import org.apache.hadoop.mapred.lib.IdentityReducer;
+import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 
-import redpoll.core.WritableSparseVector;
+import redpoll.core.LabeledWritableVector;
 
 
 /**
@@ -67,19 +66,16 @@ public class CanopyDriver {
     conf.set(Canopy.T2_KEY, String.valueOf(t2));
 
     conf.setOutputKeyClass(Text.class);
-    conf.setOutputValueClass(WritableSparseVector.class);
+    conf.setOutputValueClass(LabeledWritableVector.class);
 
     FileInputFormat.setInputPaths(conf, new Path(input));
     Path outPath = new Path(output);
     FileOutputFormat.setOutputPath(conf, outPath);
 
     conf.setMapperClass(CanopyMapper.class);
-    conf.setCombinerClass(CanopyCombiner.class);
     conf.setReducerClass(CanopyReducer.class);
-    conf.setReducerClass(IdentityReducer.class);
-    conf.setNumReduceTasks(1);
     conf.setInputFormat(SequenceFileInputFormat.class);
-    conf.setOutputFormat(TextOutputFormat.class);
+    conf.setOutputFormat(SequenceFileOutputFormat.class);
 
     client.setConf(conf);
     FileSystem dfs = FileSystem.get(conf);

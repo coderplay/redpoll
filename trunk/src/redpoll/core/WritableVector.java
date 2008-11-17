@@ -25,5 +25,11 @@ import org.apache.hadoop.io.Writable;
  * @author Jeremy Chow(coderplay@gmail.com)
  */
 public interface WritableVector extends Vector, Writable {
+  
+  WritableVector copy();
+  
+  WritableVector like();
+  
+  WritableVector like(int cardinality);
 
 }

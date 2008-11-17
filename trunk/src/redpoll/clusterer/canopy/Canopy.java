@@ -26,21 +26,18 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.OutputCollector;
 
-import redpoll.core.CardinalityException;
+import redpoll.core.LabeledWritableVector;
 import redpoll.core.Vector;
 import redpoll.core.WritableSparseVector;
 import redpoll.core.WritableVector;
 import redpoll.util.DistanceMeasure;
 
 /**
- * This class models a canopy as a center point, the number of points that are
- * contained within it according to the application of some distance metric, and
- * a point total which is the sum of all the points and is used to compute the
- * centroid when needed.
+ * This class models a canopy as a center point.
  */
 public class Canopy {
 
-  // keys used by Driver, Mapper, Combiner & Reducer
+  // keys used by Driver, Mapper & Reducer
   public static final String DISTANCE_MEASURE_KEY = "redpoll.clusterer.canopy.measure";
 
   public static final String T1_KEY = "redpoll.clusterer.canopy.t1";
@@ -51,8 +48,6 @@ public class Canopy {
 
   private static final Log log = LogFactory.getLog(Canopy.class.getName());
 
-  // the next canopyId to be allocated
-  private static int nextCanopyId = 0;
 
   // the T1 distance threshold
   private static double t1;
@@ -64,47 +59,31 @@ public class Canopy {
   private static DistanceMeasure measure;
 
   // this canopy's canopyId
-  private final int canopyId;
+  private final Text canopyId;
 
   // the current center
-  private Vector center = new WritableSparseVector(0);
+  private WritableVector center = new WritableSparseVector(0);
 
-  // the number of points in the canopy
-  private int numPoints = 0;
-
-  // the total of all points added to the canopy
-  private Vector pointTotal = null;
+  public Canopy(String idString, WritableVector point) {
+    super();
+    this.canopyId = new Text(idString);
+    this.center = point;
+  }
+  
 
   /**
-   * Create a new Canopy containing the given point
-   * 
-   * @param point a point in vector space
+   * Create a new Canopy containing the given labeled point.
+   * @param point a labeled point in vector space
    */
-  public Canopy(Vector point) {
+  public Canopy(LabeledWritableVector point) {
     super();
-    this.canopyId = nextCanopyId++;
+    this.canopyId = point.getLabel();
     this.center = point;
-    this.pointTotal = point.copy();
-    this.numPoints = 1;
   }
-
-  /**
-   * Create a new Canopy containing the given point and canopyId
-   * 
-   * @param point a point in vector space
-   * @param canopyId an int identifying the canopy local to this process only
-   */
-  public Canopy(Vector point, int canopyId) {
-    super();
-    this.canopyId = canopyId;
-    this.center = point;
-    this.pointTotal = point.copy();
-    this.numPoints = 1;
-  }
+  
 
   /**
    * Configure the Canopy and its distance measure
-   * 
    * @param job the JobConf for this job
    */
   public static void configure(JobConf job) {
@@ -119,70 +98,44 @@ public class Canopy {
     } catch (InstantiationException e) {
       throw new RuntimeException(e);
     }
-    nextCanopyId = 0;
     t1 = Double.parseDouble(job.get(T1_KEY));
     t2 = Double.parseDouble(job.get(T2_KEY));
   }
 
   /**
    * Configure the Canopy for unit tests
-   * 
    * @param aMeasure
    * @param aT1
    * @param aT2
    */
   public static void config(DistanceMeasure aMeasure, double aT1, double aT2) {
-    nextCanopyId = 0;
     measure = aMeasure;
     t1 = aT1;
     t2 = aT2;
   }
 
-  /**
-   * This is the same algorithm as the reference but inverted to iterate over
-   * existing canopies instead of the points. Because of this it does not need
-   * to actually store the points, instead storing a total points vector and the
-   * number of points. From this a centroid can be computed. <p/> This method is
-   * used by the CanopyReducer.
-   * 
-   * @param point the point to be added
-   * @param canopies the List<Canopy> to be appended
-   */
-  public static void addPointToCanopies(Vector point, List<Canopy> canopies) {
-    boolean pointStronglyBound = false;
-    for (Canopy canopy : canopies) {
-      double dist = measure.distance(canopy.getCenter(), point);
-      if (dist < t1)
-        canopy.addPoint(point);
-      pointStronglyBound = pointStronglyBound || (dist < t2);
-    }
-    if (!pointStronglyBound)
-      canopies.add(new Canopy(point));
-  }
 
   /**
    * This method is used by the CanopyMapper to perform canopy inclusion tests
-   * and to emit the point and its covering canopies to the output. The
-   * CanopyCombiner will then sum the canopy points and produce the centroids.
+   * and to emit the point and its covering canopies to the output.
    * 
    * @param point the point to be added
    * @param canopies the List<Canopy> to be appended
    * @param collector an OutputCollector in which to emit the point
    */
-  public static void emitPointToNewCanopies(WritableVector point,
+  public static void emitPointToNewCanopies(LabeledWritableVector point,
       List<Canopy> canopies, OutputCollector<Text, WritableVector> collector)
       throws IOException {
     boolean pointStronglyBound = false;
-    for (Canopy c : canopies) {
-      double dist = measure.distance(c.getCenter(), point);
-      if (dist < t1)
-        c.emitPoint(point, collector);
+    for (Canopy canopy : canopies) {
+      double dist = measure.distance(canopy.getCenter(), point);
       pointStronglyBound = pointStronglyBound || (dist < t2);
     }
     if (!pointStronglyBound) {
-      Canopy canopy = new Canopy(point.copy());
-      canopies.add(canopy);
-      canopy.emitPoint(point, collector);
+      // strong bound
+      Canopy newCanopy = new Canopy(point.copy());
+      canopies.add(newCanopy);
+      collector.collect(new Text("canopy"), newCanopy.getCenter());
     }
   }
 
@@ -198,17 +151,18 @@ public class Canopy {
    *                payload information after the point [...]<payload>
    * @param collector an OutputCollector in which to emit the point
    */
-  public static void emitPointToExistingCanopies(WritableVector point,
-      List<Canopy> canopies, WritableVector writable,
+  public static void emitPointToExistingCanopies(Text key,
+      List<Canopy> canopies, WritableVector point,
       OutputCollector<Text, WritableVector> collector) throws IOException {
     double minDist = Double.MAX_VALUE;
     Canopy closest = null;
     boolean isCovered = false;
+    StringBuilder builder = new StringBuilder();
     for (Canopy canopy : canopies) {
       double dist = measure.distance(canopy.getCenter(), point);
       if (dist < t1) {
         isCovered = true;
-        collector.collect(new Text(Canopy.formatCanopy(canopy)), writable);
+        builder.append(canopy.getIdentifier()).append(":");
       } else if (dist < minDist) {
         minDist = dist;
         closest = canopy;
@@ -216,46 +170,8 @@ public class Canopy {
     }
     // if the point is not contained in any canopies (due to canopy centroid
     // clustering), emit the point to the closest covering canopy.
-    if (!isCovered)
-      collector.collect(new Text(Canopy.formatCanopy(closest)), writable);
-  }
-
-  /**
-   * Format the canopy for output
-   * 
-   * @param canopy
-   * @return
-   */
-  public static String formatCanopy(Canopy canopy) {
-    return "C" + canopy.canopyId + ": "
-        + canopy.computeCentroid().asFormatString();
-  }
-
-  /**
-   * Add a point to the canopy
-   * 
-   * @param point some point to add
-   */
-  public void addPoint(Vector point) throws CardinalityException {
-    if (pointTotal.cardinality() != point.cardinality())
-      throw new CardinalityException();
-    
-    numPoints++;
-    for (Vector.Element element : point) {
-      pointTotal.setQuick(element.getIndex(), pointTotal.getQuick(element.getIndex())
-          + element.getValue());
-    }
-  }
-
-  /**
-   * Emit the point to the collector, keyed by the canopy's formatted
-   * representation
-   * 
-   * @param point a point to emit.
-   */
-  public void emitPoint(WritableVector point, OutputCollector<Text, WritableVector> collector)
-      throws IOException {
-    collector.collect(new Text(this.getIdentifier()), point);
+    Text label = isCovered ? new Text(builder.toString()) : closest.getCanopyId();
+    collector.collect(key, new LabeledWritableVector(label, point));
   }
 
   @Override
@@ -264,10 +180,10 @@ public class Canopy {
   }
 
   public String getIdentifier() {
-    return "C" + canopyId;
+    return canopyId.toString();
   }
 
-  public int getCanopyId() {
+  public Text getCanopyId() {
     return canopyId;
   }
 
@@ -276,31 +192,8 @@ public class Canopy {
    * 
    * @return the center of the Canopy
    */
-  public Vector getCenter() {
+  public WritableVector getCenter() {
     return center;
-  }
-
-  /**
-   * Return the number of points in the Canopy
-   * 
-   * @return the number of points in the canopy.
-   */
-  public int getNumPoints() {
-    return numPoints;
-  }
-
-  /**
-   * Compute the centroid by averaging the pointTotals
-   * 
-   * @return a point which is the new centroid
-   */
-  public WritableVector computeCentroid() {
-    WritableVector result = new WritableSparseVector(pointTotal.cardinality());
-    for (Vector.Element element : pointTotal) {
-      double avg = pointTotal.getQuick(element.getIndex()) / numPoints;
-      result.setQuick(element.getIndex(), avg);
-    }
-    return result;
   }
 
   /**

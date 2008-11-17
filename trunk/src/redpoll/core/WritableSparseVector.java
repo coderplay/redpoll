@@ -62,6 +62,15 @@ public class WritableSparseVector extends SparseVector implements WritableVector
     }
   }
   
+  @Override
+  public WritableSparseVector copy() {
+    WritableSparseVector result = like();
+    for (Map.Entry<Integer, Double> entry : values.entrySet()) {
+      result.setQuick(entry.getKey(), entry.getValue());
+    }
+    return result;
+  }
+  
   
   @Override
   public WritableSparseVector like() {
