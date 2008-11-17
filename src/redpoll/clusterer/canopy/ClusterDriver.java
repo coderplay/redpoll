@@ -27,10 +27,11 @@ import org.apache.hadoop.mapred.FileOutputFormat;
 import org.apache.hadoop.mapred.JobClient;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.SequenceFileInputFormat;
+import org.apache.hadoop.mapred.SequenceFileOutputFormat;
 import org.apache.hadoop.mapred.TextOutputFormat;
 import org.apache.hadoop.mapred.lib.IdentityReducer;
 
-import redpoll.core.WritableSparseVector;
+import redpoll.core.LabeledWritableVector;
 
 public class ClusterDriver {
 
@@ -68,7 +69,7 @@ public class ClusterDriver {
     conf.set(Canopy.CANOPY_PATH_KEY, canopies);
 
     conf.setOutputKeyClass(Text.class);
-    conf.setOutputValueClass(WritableSparseVector.class);
+    conf.setOutputValueClass(LabeledWritableVector.class);
 
     FileInputFormat.setInputPaths(conf, new Path(points));
     Path outPath = new Path(output + "/clusters");
@@ -77,7 +78,7 @@ public class ClusterDriver {
     conf.setMapperClass(ClusterMapper.class);
     conf.setReducerClass(IdentityReducer.class);
     conf.setInputFormat(SequenceFileInputFormat.class);
-    conf.setOutputFormat(TextOutputFormat.class);
+    conf.setOutputFormat(SequenceFileOutputFormat.class);
 
     client.setConf(conf);
     FileSystem dfs = FileSystem.get(conf);

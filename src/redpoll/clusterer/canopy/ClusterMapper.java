@@ -31,7 +31,7 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
-import redpoll.core.WritableSparseVector;
+import redpoll.core.LabeledWritableVector;
 import redpoll.core.WritableVector;
 
 public class ClusterMapper extends MapReduceBase implements
@@ -41,7 +41,7 @@ public class ClusterMapper extends MapReduceBase implements
 
   public void map(Text key, WritableVector value,
                   OutputCollector<Text, WritableVector> output, Reporter reporter) throws IOException {
-    Canopy.emitPointToExistingCanopies(value, canopies, value, output);
+    Canopy.emitPointToExistingCanopies(key, canopies, value, output);
   }
 
   /**
@@ -67,10 +67,9 @@ public class ClusterMapper extends MapReduceBase implements
       SequenceFile.Reader reader = new SequenceFile.Reader(fs, path, job);
       try {
         Text key = new Text();
-        WritableSparseVector value = new WritableSparseVector();
+        LabeledWritableVector value = new LabeledWritableVector();
         while (reader.next(key, value)) {
-          int canopyId = Integer.parseInt(key.toString().substring(1));
-          Canopy canopy = new Canopy(value, canopyId);
+          Canopy canopy = new Canopy(value.copy());
           canopies.add(canopy);
         }
       } finally {

@@ -31,21 +31,29 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reporter;
 
+import redpoll.core.LabeledWritableVector;
 import redpoll.core.WritableSparseVector;
 import redpoll.core.WritableVector;
 
 /**
+ * This class will produce canopy centers locally.
  * @author Jeremy Chow(coderplay@gmail.com)
  */
 public class CanopyMapper extends MapReduceBase implements Mapper<Text, WritableVector, Text, WritableVector> {
   
   private static final Log log = LogFactory.getLog(CanopyMapper.class.getName());
   
+  /* We maintain a list of current canopy centers locally */
   private final List<Canopy> canopies = new ArrayList<Canopy>();
   
+  /**
+   * for example, in text clustering:
+   * input: key is documentId,  value is tf-idf vector of this document.
+   * output: key is documentId of a canopy center, value is <documentId, vector> tuple.
+   */
   public void map(Text key, WritableVector value,
       OutputCollector<Text, WritableVector> output, Reporter reporter) throws IOException {
-    WritableVector point = (WritableSparseVector) value.copy();
+    LabeledWritableVector point = new LabeledWritableVector(key, (WritableSparseVector) value);
     Canopy.emitPointToNewCanopies(point, canopies, output);
   }
   
