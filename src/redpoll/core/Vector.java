@@ -115,6 +115,15 @@ public interface Vector extends Iterable<Vector.Element>{
   public Vector scale(double alpha);
   
  
+  /**
+   * Return a new matrix containing the values of the recipient divided by the
+   * argument
+   * 
+   * @param x a double value
+   * @return a new Vector
+   */
+  public Vector divide(double divisor);
+  
   public static interface Element {
     /**
      * @return the value of this vector element.

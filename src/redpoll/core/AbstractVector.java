@@ -96,6 +96,15 @@ public abstract class AbstractVector implements Vector {
     }
     return result;
   }
+  
+  
+  public Vector divide(double divisor) {
+    Vector result = copy();
+    for (Vector.Element element : this) {
+      result.setQuick(element.getIndex(), getQuick(element.getIndex()) / divisor);
+    }
+    return result;
+  }
 
   public abstract int cardinality();
 
