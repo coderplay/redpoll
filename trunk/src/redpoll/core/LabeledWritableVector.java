@@ -98,6 +98,10 @@ public class LabeledWritableVector implements WritableVector {
     return vector.scale(alpha);
   }
 
+  public Vector divide(double divisor) {
+    return vector.divide(divisor);
+  }
+  
   public void set(int index, double value) {
     vector.set(index, value);
   }
