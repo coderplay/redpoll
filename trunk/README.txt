@@ -1,1 +1,1 @@
-Welcome to our redpoll preject!
+Welcome to our redpoll project!
