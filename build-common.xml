@@ -1,0 +1,286 @@
+<?xml version="1.0"?>
+
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+
+
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="repollcommon" default="jar">
+
+  <property name="redpoll.root" location="${basedir}/.."/>
+  <property file="${redpoll.root}/build.properties"/>
+  <property file="${user.home}/build.properties" />
+  <property file="${basedir}/build.properties" />
+
+  <property name="redpoll.conf.dir" value="${redpoll.root}/conf"/>
+  <property name="dist.dir" location="${redpoll.root}"/>
+
+  <property name="build.dir.redpoll" location="${redpoll.root}/build"/>
+  <property name="build.dir.hadoop" location="${build.dir.redpoll}/hadoopcore"/>
+  <property name="build.dir" location="${build.dir.redpoll}/${ant.project.name}"/>
+  <property name="build.classes" location="${build.dir}/classes"/>
+  <property name="build.encoding" value="ISO-8859-1"/>
+
+  <property name="hadoop.conf.dir" location="${hadoop.root}/conf"/>
+
+  <property name="javac.debug" value="on"/>
+  <property name="javac.version" value="1.5"/>
+  <property name="javac.optimize" value="on"/>
+  <property name="javac.deprecation" value="off"/>
+  <property name="javac.args" value=""/>
+  <property name="javac.args.warnings" value=""/> <!-- -Xlint:unchecked"/ -->
+
+  <!-- configuration needed for tests -->
+  <property name="test.src.dir" value="${basedir}/src/test"/>
+  <property name="test.src.data.dir" value="${redpoll.root}/data"/>
+  <property name="test.build.dir" value="${build.dir}/test"/>
+  <property name="test.log.dir" value="${test.build.dir}/logs"/>
+  <property name="test.data.dir" value="${test.build.dir}/data"/>
+  <property name="test.build.src" value="${test.build.dir}/src"/>
+  <property name="test.build.classes" value="${test.build.dir}/classes"/>
+  <property name="test.include" value="Test*"/>
+  <property name="test.classpath.id" value="test.classpath"/>
+  <property name="test.output" value="true"/>
+  <property name="test.timeout" value="2700000"/>
+  <property name="test.junit.output.format" value="xml"/>
+  <property name="test.junit.output.usefile" value="true"/>
+  <property name="test.silent" value="true"/>
+
+  <path id="test.classpath">
+    <pathelement location="${test.build.classes}" />
+    <pathelement location="" />
+    <pathelement location="${test.data.dir}/conf"/>
+    <pathelement location="${redpoll.conf.dir}"/>
+    <fileset dir="${test.src.data.dir}" includes="files/*.jar"/>
+    <fileset dir="${redpoll.root}" includes="testlibs/*.jar"/>
+    <path refid="classpath"/>
+  </path>
+
+  <import file="${redpoll.root}/ivy/get_ivy.xml"/>
+
+  <target name="settings-ivy" depends="init-ivy">
+    <ivy:settings file="${redpoll.root}/ivy/ivysettings.xml"/>
+  </target>
+
+  <target name="resolve" description="--> retrieve dependencies with ivy" depends="settings-ivy">
+    <ivy:retrieve pattern="${build.dir.hadoop}/[artifact]-[revision].[ext]"/>
+  </target>
+
+  <available property="hadoopcore.install.done" file="${build.dir.hadoop}/hadoop-${hadoop.version}.installed"/>
+
+  <target name="install-dependencies-internal" depends="resolve" unless="hadoopcore.install.done">
+    <untar src="${build.dir.hadoop}/hadoop-${hadoop.version}.tar.gz" dest="${build.dir.hadoop}" compression="gzip"/>
+    <chmod file="${hadoop.root}/bin/hadoop" perm="+x"/>
+    <touch file="${build.dir.hadoop}/hadoop-${hadoop.version}.installed"/>
+  </target>
+
+  <target name="install-dependencies-default" unless="hadoop.root.nondefault">
+    <antcall target="install-dependencies-internal"/>
+  </target>
+
+  <target name="install-dependencies">
+	<echo message="${hadoop.root}" />
+    <condition property="hadoop.root.nondefault">
+      <not>
+        <equals arg1="${hadoop.root}" arg2="${hadoop.root.default}"/>
+      </not>
+    </condition>
+    <antcall target="install-dependencies-default"/>
+  </target>
+
+  <!-- the normal classpath -->
+  <path id="common-classpath">
+    <pathelement location="${hadoop.jar}"/>
+    <pathelement location="${build.dir.redpoll}/classes"/>
+    <fileset dir="${build.dir.redpoll}" includes="*/*.jar"/>
+    <fileset dir="${redpoll.root}/lib" includes="*.jar"/>
+    <fileset dir="${redpoll.root}/ql/lib" includes="*.jar"/>
+  </path>
+
+  <path id="classpath">
+    <pathelement location="${build.dir.redpoll}/examples/classes"/>
+    <pathelement location="${build.dir.redpoll}/core/classes"/>
+    <fileset dir="${test.src.data.dir}" includes="files/*.jar"/>
+    <fileset dir="${basedir}" includes="lib/*.jar"/>
+    <path refid="common-classpath"/>
+  </path>
+
+  <target name="init">
+    <mkdir dir="${build.dir.redpoll}"/>
+    <mkdir dir="${build.dir}"/>
+    <mkdir dir="${build.classes}"/>
+    <mkdir dir="${build.dir.hadoop}"/>
+  	<mkdir dir="${build.dir.lucene}"/>
+    <mkdir dir="${test.build.dir}"/>
+    <mkdir dir="${test.build.src}"/>
+    <mkdir dir="${test.build.classes}"/>
+  </target>
+
+  <target name="test-init">
+    <mkdir dir="${test.data.dir}"/>
+    <mkdir dir="${test.log.dir}/clientpositive"/>
+    <mkdir dir="${test.log.dir}/clientnegative"/>
+    <mkdir dir="${test.log.dir}/positive"/>
+    <mkdir dir="${test.log.dir}/negative"/>
+    <copy todir="${test.data.dir}">
+      <fileset dir="${test.src.data.dir}">
+        <exclude name="**/.svn"/>
+      </fileset>
+    </copy>
+  </target>
+
+  <target name="compile" depends="init, install-dependencies">
+    <echo message="Compiling: ${ant.project.name}"/>
+    <javac
+     encoding="${build.encoding}"
+     srcdir="${src.dir}"
+     includes="**/*.java"
+     destdir="${build.classes}"
+     debug="${javac.debug}"
+     deprecation="${javac.deprecation}">
+      <compilerarg line="${javac.args} ${javac.args.warnings}" />
+      <classpath refid="classpath"/>
+    </javac>
+  </target>
+
+  <target name="jar" depends="compile">
+    <echo message="Jar: ${ant.project.name}"/>
+    <jar
+      jarfile="${build.dir}/redpoll_${ant.project.name}.jar"
+      basedir="${build.classes}"
+    />
+  </target>
+
+  <!-- target to compile tests -->
+  <target name="compile-test" depends="compile">
+    <javac
+     encoding="${build.encoding}"
+     srcdir="${test.src.dir}"
+     includes="org/apache/hadoop/**/*.java"
+     destdir="${test.build.classes}"
+     debug="${javac.debug}"
+     optimize="${javac.optimize}"
+     target="${javac.version}"
+     source="${javac.version}"
+     deprecation="${javac.deprecation}">
+      <compilerarg line="${javac.args} ${javac.args.warnings}" />
+      <classpath refid="test.classpath"/>
+    </javac>
+    <javac
+     encoding="${build.encoding}"
+     srcdir="${test.build.src}"
+     includes="org/apache/hadoop/**/*.java"
+     destdir="${test.build.classes}"
+     debug="${javac.debug}"
+     optimize="${javac.optimize}"
+     target="${javac.version}"
+     source="${javac.version}"
+     deprecation="${javac.deprecation}">
+      <compilerarg line="${javac.args} ${javac.args.warnings}" />
+      <classpath refid="test.classpath"/>
+    </javac>
+  </target>
+	
+  <target name="test-jar" depends="compile-test">
+    <delete file="${test.build.dir}/test-udfs.jar"/>
+    <jar jarfile="${test.build.dir}/test-udfs.jar">
+        <fileset dir="${test.build.classes}" includes="**/udf/*.class"/>
+    </jar>
+  </target>
+
+  <target name="test-conditions">
+    <condition property="qfile" value="">
+      <not>
+        <isset property="qfile"/>
+      </not>
+    </condition>
+    <condition property="overwrite" value="false">
+      <not>
+        <isset property="overwrite"/>
+      </not>
+    </condition>
+    <condition property="standalone" value="false">
+      <not>
+        <isset property="standalone"/>
+      </not>
+    </condition>
+  </target>
+
+  <!-- target to deploy anttasks -->
+
+  <target name="compile-ant-tasks" depends="init">
+    <subant target="compile">
+      <fileset dir=".." includes="ant/build.xml"/>
+    </subant>
+  </target>
+
+  <target name="deploy-ant-tasks" depends="compile-ant-tasks">
+    <subant target="jar">
+      <fileset dir=".." includes="ant/build.xml"/>
+    </subant>
+  </target>
+
+  <target name="gen-test"/>
+
+  <!-- target to run the tests -->
+  <target name="test"
+  	depends="test-conditions,gen-test,compile-test,test-jar,test-init">
+    <junit showoutput="${test.output}" printsummary="yes" haltonfailure="no"
+           fork="yes" maxmemory="256m" dir="${basedir}" timeout="${test.timeout}"
+           errorProperty="tests.failed" failureProperty="tests.failed" filtertrace="off">
+      <!--
+      <jvmarg value="-Xdebug"/>
+      <jvmarg value="-Xrunjdwp:transport=dt_socket,address=8000,server=y,suspend=y"/> -->
+      <env key="HADOOP_HOME" value="${hadoop.root}"/>
+      <env key="TZ" value="US/Pacific"/>
+      <sysproperty key="test.output.overwrite" value="${overwrite}"/>
+      <sysproperty key="test.service.standalone.server" value="${standalone}"/>
+      <sysproperty key="log4j.configuration" value="file://${test.data.dir}/conf/redpoll-log4j.properties"/>
+      <sysproperty key="derby.stream.error.file" value="${test.build.dir}/derby.log"/>
+      <sysproperty key="redpoll.aux.jars.path" value="${test.build.dir}/test-udfs.jar,${test.src.data.dir}/files/TestSerDe.jar"/>
+      <sysproperty key="ql.test.query.clientpositive.dir" value="${ql.test.query.clientpositive.dir}"/>
+      <sysproperty key="ql.test.results.clientpositive.dir" value="${ql.test.results.clientpositive.dir}"/>
+      <sysproperty key="test.log.dir" value="${test.log.dir}"/>
+      <sysproperty key="test.silent" value="${test.silent}"/>
+
+      <classpath refid="${test.classpath.id}"/>
+      <formatter type="${test.junit.output.format}" usefile="${test.junit.output.usefile}" />
+      <batchtest todir="${test.build.dir}" unless="testcase">
+        <fileset dir="${test.build.classes}"
+                 includes="**/${test.include}.class"
+                 excludes="**/TestSerDe.class" />
+      </batchtest>
+      <batchtest todir="${test.build.dir}" if="testcase">
+        <fileset dir="${test.build.classes}" includes="**/${testcase}.class"/>
+      </batchtest>
+      <assertions>
+        <enable />
+      </assertions>
+    </junit>
+    <fail if="tests.failed">Tests failed!</fail>
+  </target>
+
+  <target name="clean-test">
+    <delete dir="${test.build.dir}"/>
+    <delete dir="${build.dir.redpoll}/test"/>
+  </target>
+
+  <target name="clean">
+    <echo message="Cleaning: ${ant.project.name}"/>
+    <delete dir="${build.dir}"/>
+  </target>
+
+</project>

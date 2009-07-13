@@ -1,0 +1,11 @@
+<ivy-module version="2.0">
+    <info organisation="redpoll" module="common"/>
+    <dependencies>
+        <dependency org="hadoop" name="core" rev="${hadoop.version}">
+          <artifact name="hadoop" type="source" ext="tar.gz"/>
+        </dependency> 
+        <dependency org="lucene" name="java" rev="${lucene.version}">
+          <artifact name="lucene" type="source" ext="tar.gz"/>
+        </dependency> 
+    </dependencies>
+</ivy-module>

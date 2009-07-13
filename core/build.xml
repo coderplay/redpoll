@@ -1,0 +1,9 @@
+<project name="core" default="jar">
+  <import file="../build-common.xml"/>
+  <target name="compile">
+  	<echo message="compile examples"/>
+  </target>
+  <target name="jar">
+  	<echo message="core jar"/>
+  </target>
+</project> 
